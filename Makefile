@@ -21,7 +21,7 @@ CLOCK = 48000000
 CPU =MK20DX256
 # For 3.1. For 3.0, MK20DX128
 
-TEENSY_PATH = /home/matthew/498/teensy-toolchain
+TEENSY_PATH = ~/code/arduino-1.0.5
 COMPILER = $(TEENSY_PATH)/hardware/tools/arm-none-eabi/bin
 
 CFLAGS = -Wall -g -Os -mcpu=cortex-m4 -mthumb -nostdlib -MMD -DF_CPU=$(CLOCK) -DUSB_SERIAL -Ivendor/ -D__$(CPU)__
