@@ -58,7 +58,7 @@ static block_t *current_block;  // A pointer to the block currently being traced
 // Bits in the PIT register:
 #define TIE 2 // Timer interrupt enable
 #define TEN 1 // Timer enable
-enum pulse_status {PULSE_SET, PULSE_RESET};
+enum pulse_status {PULSE_RESET, PULSE_SET};
 
 typedef struct {
   volatile uint32_t active_bits;
@@ -105,6 +105,7 @@ void st_wake_up()
   } else { 
     STEPPER_DISABLE_PORT(COR) = STEPPER_DISABLE_BIT;
   }
+
   if (sys.state == STATE_CYCLE) {
     // Initialize stepper output bits
     out_bits = (0) ^ (settings.invert_mask); 
@@ -124,12 +125,14 @@ void st_go_idle()
   if ((settings.stepper_idle_lock_time != 0xff) || bit_istrue(sys.execute,EXEC_ALARM)) {
     // Force stepper dwell to lock axes for a defined amount of time to ensure the axes come to a complete
     // stop and not drift from residual inertial forces at the end of the last movement.
-    delay_microseconds(1000 * settings.stepper_idle_lock_time);
-    if (bit_istrue(settings.flags,BITFLAG_INVERT_ST_ENABLE)) { 
-      STEPPER_DISABLE_PORT(COR) = STEPPER_DISABLE_BIT;
-    }else{
-      STEPPER_DISABLE_PORT(SOR) = STEPPER_DISABLE_BIT; 
-    }   
+	 //    delay_microseconds(1000 * settings.stepper_idle_lock_time);
+	 //    if (bit_istrue(settings.flags,BITFLAG_INVERT_ST_ENABLE)) { 
+	 //      STEPPER_DISABLE_PORT(COR) = STEPPER_DISABLE_BIT;
+	 //    }else{
+	 //      STEPPER_DISABLE_PORT(SOR) = STEPPER_DISABLE_BIT; 
+	 //Start the disable timeout
+	 PIT_LDVAL2 = 1000 * settings.stepper_idle_lock_time * TICKS_PER_MICROSECOND;
+	 PIT_TCTRL2 |= TIE|TEN;  
   }
 }
 
@@ -315,7 +318,7 @@ inline void trigger_pulse(uint32_t active){
   // Otherwise, we toggle the bits here and pit1 fires once, clearing them.
   pit1_state.active_bits = active;  
 #ifdef STEP_PULSE_DELAY
-  pit1_state.step_interrupt_status = PULSE_SET;
+  pit1_state.step_interrupt_status |= PULSE_SET;
   PIT_LDVAL1 = STEP_PULSE_DELAY * TICKS_PER_MICROSECOND;
 #else
   STEPPER_PORT(TOR) = active;
@@ -325,7 +328,7 @@ inline void trigger_pulse(uint32_t active){
 }
 
 void pit1_isr(void){
-  PIT_TFLG1 = 1;
+  PIT_TFLG1 = 1;  //clear interrupt flag
   PIT_TCTRL1 &= ~TEN;
   STEPPER_PORT(TOR) = pit1_state.active_bits;
 #ifdef STEP_PULSE_DELAY
@@ -334,8 +337,19 @@ void pit1_isr(void){
     PIT_LDVAL1 = pit1_state.pulse_length;
     PIT_TCTRL1 |= TEN;  
   }
-  #endif
+#endif
 }
+
+void pit2_isr(void){
+  PIT_TFLG2 = 1;  //clear interrupt flag
+  PIT_TCTRL2 = 0; //stop, disable interrupts
+  if (bit_istrue(settings.flags,BITFLAG_INVERT_ST_ENABLE)) { 
+	 STEPPER_DISABLE_PORT(COR) = STEPPER_DISABLE_BIT;
+  }else{
+	 STEPPER_DISABLE_PORT(SOR) = STEPPER_DISABLE_BIT; 
+  }  
+}
+
 
 // Reset and clear stepper subsystem variables
 void st_reset()
@@ -369,8 +383,16 @@ void st_init()
   // Configure PIT 1 - reset timer
   PIT_TCTRL1 = TIE;  //enable interrupts
 
+  //Timer 2 for idle delay
+  PIT_TCTRL2 = 0; //not running for now
+  PIT_LDVAL2 = settings.stepper_idle_lock_time * 1000 *TICKS_PER_MICROSECOND;
+
+
   NVIC_ENABLE_IRQ(IRQ_PIT_CH0);
   NVIC_ENABLE_IRQ(IRQ_PIT_CH1);
+  NVIC_ENABLE_IRQ(IRQ_PIT_CH2);
+
+  pit1_state.step_interrupt_status = PULSE_RESET;
 
   // Start in the idle state, but first wake up to check for keep steppers enabled option.
   st_wake_up();
@@ -383,9 +405,9 @@ void st_init()
 static uint32_t config_step_timer(uint32_t cycles)
 {
 
-  PIT_TCTRL0 &= ~TEN; // Stop the timer 
+  //  PIT_TCTRL0 &= ~TEN; // Stop the timer 
   PIT_LDVAL0 = cycles; // Load the new value
-  PIT_TCTRL0 |= TEN;
+  //  PIT_TCTRL0 |= TEN;
   return(cycles);
 }
 
