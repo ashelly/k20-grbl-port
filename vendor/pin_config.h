@@ -2,6 +2,12 @@
 #define pin_config_h
 #include <mk20dx128.h>
 
+//: See K20 SubFamily Reference Manual
+//: K20P64M72SF1RM
+//: section 1.14.1 Pin Control Register
+
+
+
  // For resetting interrupts
 #define ISF (1<<24)
 
@@ -19,7 +25,10 @@
 #define PULL_UP    3
 #define PULL_NONE  0
 
+//Standard Output is :
+// "GPIO"|"High Drive Strength"|"Slow Slew Rate Enabled"
 #define STANDARD_OUTPUT ((1<<8) | (1<<6) | (1<<2))
+
 #define MUX_GPIO (1<<8)
 
 #endif

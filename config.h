@@ -169,7 +169,7 @@
 // NOTE: Uncomment to enable. The recommended delay must be > 3us and the total step pulse
 // time, which includes the Grbl settings pulse microseconds, must not exceed 127us. Reported
 // successful values for certain setups have ranged from 10 to 20us.
-// #define STEP_PULSE_DELAY 10 // Step pulse delay in microseconds. Default disabled.
+#define STEP_PULSE_DELAY 5 // Step pulse delay in microseconds. Default disabled.
 
 // Uncomment the following define if you are using hardware that drives high when your limits
 // are reached. You will need to ensure that you have appropriate pull-down resistors on the
