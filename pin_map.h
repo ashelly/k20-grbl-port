@@ -44,7 +44,7 @@
 #define STEPPER_DISABLE_PORT(reg) GPIOC_P##reg
 #define STEPPER_DISABLE_DDR       GPIOC_PDDR
 #define STEPPER_DISABLE_CTRL      PORTC_PCR1
-#define STEPPER_DISABLE_BIT       2  //Teensy3.x pin 23
+#define STEPPER_DISABLE_BIT       2  //Teensy3.x pin 22
 
 
 #define STEPPER_PORT(reg) GPIOC_P##reg
