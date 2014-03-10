@@ -58,7 +58,7 @@ static block_t *current_block;  // A pointer to the block currently being traced
 // Bits in the PIT register:
 #define TIE 2 // Timer interrupt enable
 #define TEN 1 // Timer enable
-enum pulse_status {PULSE_RESET, PULSE_SET};
+enum pulse_status {PULSE_SET, PULSE_RESET};
 
 typedef struct {
   volatile uint32_t active_bits;
@@ -105,7 +105,6 @@ void st_wake_up()
   } else { 
     STEPPER_DISABLE_PORT(COR) = STEPPER_DISABLE_BIT;
   }
-
   if (sys.state == STATE_CYCLE) {
     // Initialize stepper output bits
     out_bits = (0) ^ (settings.invert_mask); 
@@ -318,7 +317,7 @@ inline void trigger_pulse(uint32_t active){
   // Otherwise, we toggle the bits here and pit1 fires once, clearing them.
   pit1_state.active_bits = active;  
 #ifdef STEP_PULSE_DELAY
-  pit1_state.step_interrupt_status |= PULSE_SET;
+  pit1_state.step_interrupt_status = PULSE_SET;
   PIT_LDVAL1 = STEP_PULSE_DELAY * TICKS_PER_MICROSECOND;
 #else
   STEPPER_PORT(TOR) = active;
@@ -405,9 +404,9 @@ void st_init()
 static uint32_t config_step_timer(uint32_t cycles)
 {
 
-  //  PIT_TCTRL0 &= ~TEN; // Stop the timer 
+  PIT_TCTRL0 &= ~TEN; // Stop the timer 
   PIT_LDVAL0 = cycles; // Load the new value
-  //  PIT_TCTRL0 |= TEN;
+  PIT_TCTRL0 |= TEN;
   return(cycles);
 }
 
