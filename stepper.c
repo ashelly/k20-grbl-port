@@ -99,7 +99,9 @@ void st_wake_up()
   // Before we enable the stepper motors, make sure that the step bits are set to not trigger a pulse
   STEPPER_PORT(DOR) = (STEPPER_PORT(DOR) & ~STEP_MASK) | (STEP_MASK & settings.invert_mask);
 
+  
   // Enable steppers by resetting the stepper disable port
+  PIT_TCTRL2 = 0 ; //cancel any disable interrupt 
   if (bit_istrue(settings.flags,BITFLAG_INVERT_ST_ENABLE)) { 
     STEPPER_DISABLE_PORT(SOR) = STEPPER_DISABLE_BIT; 
   } else { 
